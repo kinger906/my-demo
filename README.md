@@ -1,4 +1,15 @@
-demo集合
+# umi project
 
-react分支：react方向的demo
-vue分支:vue方向的demo
+## Getting Started
+
+Install dependencies,
+
+```bash
+$ yarn
+```
+
+Start the dev server,
+
+```bash
+$ yarn start
+```
