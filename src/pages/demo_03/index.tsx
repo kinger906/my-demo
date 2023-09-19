@@ -4,11 +4,15 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 // 导入GUI调试器
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import styles from './index.less';
 
 export default function IndexPage() {
   const demoRef = useRef<any>();
   const demoRef2 = useRef<any>();
+  const demoRef3 = useRef<any>();
+  const demoRef4 = useRef<any>();
+  const indexRef = useRef<number>(0);
 
   const renderDemo1 = () => {
     const domElem = demoRef.current;
@@ -227,9 +231,299 @@ export default function IndexPage() {
     animate();
   };
 
+  const renderDemo3 = () => {
+    const domElem = demoRef3.current;
+    // 1.创建场景
+    const scene = new THREE.Scene();
+    // 2.创建相机-透视相机（近大远小）
+    const camera = new THREE.PerspectiveCamera(
+      45, //  视角(同样的距离，越大视野越大，看的东西越多)
+      domElem.clientWidth / domElem.clientHeight, //相机的宽高比
+      0.1, // 近平面：相机最近能看到的物体
+      1000, // 远平面：相机最远能看到的物体
+    );
+    // 3.创建渲染器-渲染到画布上
+    const renderer = new THREE.WebGLRenderer({
+      // 设置抗锯齿
+      antialias: true,
+    });
+    // 正确的光照材质，按照物理的光照的模型来渲染
+    renderer.physicallyCorrectLights = true;
+    renderer.setSize(domElem.clientWidth, domElem.clientHeight); //渲染的屏幕大小
+    domElem.appendChild(renderer.domElement); //将生成的画布(cavas)添加到元素上
+    // 5.设置相机位置 (x:水平方向，y：垂直方向，z：正对着我们)
+    camera.position.z = 10;
+    camera.lookAt(0, 0, 0); //相机看向哪里，默认是圆点(0,0,0)
+    // 6.渲染
+    // renderer.render(scene, camera)
+
+    // 7.添加世界坐标辅助器
+    const axesHelper = new THREE.AxesHelper(5);
+    camera.position.x = 2;
+    camera.position.y = 1;
+    scene.add(axesHelper);
+
+    // 8.添加控制器轨道
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; //设置带阻尼的惯性
+    controls.dampingFactor = 0.01; //设置阻尼系数
+
+    // demo代码内容
+    // 1.创建点光源组
+    const pointLightGroup = new THREE.Group();
+    let radius = 3; //转动半径
+    let pointLightArr: any = [];
+    for (let i = 0; i < 3; i++) {
+      // 2.创建球体当灯泡
+      const sphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+      const sphereMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        // 发射强度:越大颜色越强烈
+        emissiveIntensity: 10,
+      });
+      const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+      sphere.position.set(
+        radius * Math.cos((i * 2 * Math.PI) / 3),
+        Math.cos((i * 2 * Math.PI) / 3),
+        radius * Math.sin((i * 2 * Math.PI) / 3),
+      );
+      const pointLight = new THREE.PointLight(0xffffff, 1);
+      sphere.add(pointLight);
+      // 3.将球光源添加到光源组
+      pointLightGroup.add(sphere);
+      pointLightArr.push(sphere);
+    }
+    scene.add(pointLightGroup);
+
+    // 4.使用补间函数，从0到2pi，使灯泡旋转
+    let options = {
+      angle: 0,
+    };
+    gsap.to(options, {
+      angle: Math.PI * 2,
+      // 周期为10s，10s转一圈
+      duration: 10,
+      // 一直重复
+      repeat: -1,
+      // 线性旋转
+      ease: 'linear',
+      onUpdate: () => {
+        // 5.让整个光源组旋转
+        pointLightGroup.rotation.y = options.angle;
+        // 6.让三个球跳动起来
+        pointLightArr.forEach((item, index) => {
+          item.position.set(
+            radius * Math.cos((index * 2 * Math.PI) / 3),
+            Math.cos((index * 2 * Math.PI) / 3 + options.angle * 5),
+            radius * Math.sin((index * 2 * Math.PI) / 3 + options.angle),
+          );
+        });
+      },
+    });
+
+    // demo代码内容
+
+    // 动画渲染
+    function animate() {
+      controls.update();
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  };
+
+  const renderDemo4 = () => {
+    const domElem = demoRef4.current;
+    // 1.创建场景
+    const scene = new THREE.Scene();
+    // 2.创建相机-透视相机（近大远小）
+    const camera = new THREE.PerspectiveCamera(
+      45, //  视角(同样的距离，越大视野越大，看的东西越多)
+      domElem.clientWidth / domElem.clientHeight, //相机的宽高比
+      0.1, // 近平面：相机最近能看到的物体
+      1000, // 远平面：相机最远能看到的物体
+    );
+    // 3.创建渲染器-渲染到画布上
+    const renderer = new THREE.WebGLRenderer({
+      // 设置抗锯齿
+      antialias: true,
+    });
+    // 正确的光照材质，按照物理的光照的模型来渲染
+    renderer.physicallyCorrectLights = true;
+    renderer.setSize(domElem.clientWidth, domElem.clientHeight); //渲染的屏幕大小
+    domElem.appendChild(renderer.domElement); //将生成的画布(cavas)添加到元素上
+    // 5.设置相机位置 (x:水平方向，y：垂直方向，z：正对着我们)
+    camera.position.z = 20;
+    camera.lookAt(0, 0, 0); //相机看向哪里，默认是圆点(0,0,0)
+    // 6.渲染
+    // renderer.render(scene, camera)
+
+    // 7.添加世界坐标辅助器
+    const axesHelper = new THREE.AxesHelper(5);
+    camera.position.x = 2;
+    camera.position.y = 1;
+    scene.add(axesHelper);
+
+    // 8.添加控制器轨道
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; //设置带阻尼的惯性
+    controls.dampingFactor = 0.01; //设置阻尼系数
+
+    // demo代码内容
+    // 1.创建点光源组
+    const pointLightGroup = new THREE.Group();
+    let radius = 3; //转动半径
+    let pointLightArr: any = [];
+    for (let i = 0; i < 3; i++) {
+      // 2.创建球体当灯泡
+      const sphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+      const sphereMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        // 发射强度:越大颜色越强烈
+        emissiveIntensity: 10,
+      });
+      const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+      sphere.position.set(
+        radius * Math.cos((i * 2 * Math.PI) / 3),
+        Math.cos((i * 2 * Math.PI) / 3),
+        radius * Math.sin((i * 2 * Math.PI) / 3),
+      );
+      const pointLight = new THREE.PointLight(0xffffff, 1);
+      sphere.add(pointLight);
+      // 3.将球光源添加到光源组
+      pointLightGroup.add(sphere);
+      pointLightArr.push(sphere);
+    }
+    scene.add(pointLightGroup);
+
+    // 4.使用补间函数，从0到2pi，使灯泡旋转
+    let options = {
+      angle: 0,
+    };
+    gsap.to(options, {
+      angle: Math.PI * 2,
+      // 周期为10s，10s转一圈
+      duration: 10,
+      // 一直重复
+      repeat: -1,
+      // 线性旋转
+      ease: 'linear',
+      onUpdate: () => {
+        // 5.让整个光源组旋转
+        pointLightGroup.rotation.y = options.angle;
+        // 6.让三个球跳动起来
+        pointLightArr.forEach((item, index) => {
+          item.position.set(
+            radius * Math.cos((index * 2 * Math.PI) / 3),
+            Math.cos((index * 2 * Math.PI) / 3 + options.angle * 5),
+            radius * Math.sin((index * 2 * Math.PI) / 3 + options.angle),
+          );
+        });
+      },
+    });
+
+    // demo代码内容
+
+    // 动画渲染
+    function animate() {
+      controls.update();
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    //demo4代码内容
+    // 使用补间动画移动相机
+    let timeLine1 = gsap.timeline();
+    let timeLine2 = gsap.timeline();
+
+    // 定义相机移动函数
+    function tranlateCamera(position, target) {
+      timeLine1.to(camera.position, {
+        x: position.x,
+        y: position.y,
+        z: position.z,
+        duration: 1,
+        ease: 'power2.inOut',
+      });
+
+      timeLine2.to(controls.target, {
+        x: target.x,
+        y: target.y,
+        z: target.z,
+        duration: 1,
+        ease: 'power2.inOut',
+      });
+    }
+
+    const scenes = [
+      {
+        text: '圣诞快乐1',
+        callback: () => {
+          // 执行函数切换位置
+          tranlateCamera(
+            new THREE.Vector3(1, 1, 20),
+            new THREE.Vector3(1, 3, 20),
+          );
+          console.log(1);
+        },
+      },
+      {
+        text: '圣诞快乐2',
+        callback: () => {
+          // 执行函数切换位置
+          tranlateCamera(
+            new THREE.Vector3(2, 2, 20),
+            new THREE.Vector3(2, 4, 20),
+          );
+          console.log(2);
+        },
+      },
+      {
+        text: '圣诞快乐3',
+        callback: () => {
+          // 执行函数切换位置
+          tranlateCamera(
+            new THREE.Vector3(3, 3, 20),
+            new THREE.Vector3(2, 5, 20),
+          );
+          console.log(3);
+        },
+      },
+    ];
+    // 防抖 滑轮滑动太快
+    let isAnimate = false;
+
+    // 监听鼠标滚轮事件
+    domElem.addEventListener(
+      'wheel',
+      (e) => {
+        if (isAnimate) return;
+        isAnimate = true;
+        if (e.deltaY > 0) {
+          indexRef.current++;
+          if (indexRef.current > scenes.length - 1) {
+            indexRef.current = 0;
+          }
+          scenes[indexRef.current].callback();
+
+          setTimeout(() => {
+            isAnimate = false;
+          }, 1000);
+        }
+      },
+      false,
+    );
+    //demo4代码内容
+  };
+
   useEffect(() => {
     renderDemo1();
     renderDemo2();
+    renderDemo3();
+    renderDemo4();
   }, []);
 
   return (
@@ -245,6 +539,16 @@ export default function IndexPage() {
         <div className={styles.module}>
           <h4>demo10：点光源</h4>
           <div className={styles.demo} ref={demoRef2}></div>
+        </div>
+
+        <div className={styles.module}>
+          <h4>demo11：水平三个方向萤火虫运动效果</h4>
+          <div className={styles.demo} ref={demoRef3}></div>
+        </div>
+
+        <div className={styles.module}>
+          <h4>demo12：切换位置和场景</h4>
+          <div className={styles.demo} ref={demoRef4}></div>
         </div>
       </div>
     </div>
