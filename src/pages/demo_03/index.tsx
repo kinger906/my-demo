@@ -12,6 +12,9 @@ export default function IndexPage() {
   const demoRef2 = useRef<any>();
   const demoRef3 = useRef<any>();
   const demoRef4 = useRef<any>();
+  const demoRef5 = useRef<any>();
+  const demoRef6 = useRef<any>();
+  const demoRef7 = useRef<any>();
   const indexRef = useRef<number>(0);
 
   const renderDemo1 = () => {
@@ -519,11 +522,303 @@ export default function IndexPage() {
     //demo4代码内容
   };
 
+  const renderDemo5 = () => {
+    const domElem = demoRef5.current;
+    // 1.创建场景
+    const scene = new THREE.Scene();
+    // 2.创建相机-透视相机（近大远小）
+    const camera = new THREE.PerspectiveCamera(
+      45, //  视角(同样的距离，越大视野越大，看的东西越多)
+      domElem.clientWidth / domElem.clientHeight, //相机的宽高比
+      0.1, // 近平面：相机最近能看到的物体
+      1000, // 远平面：相机最远能看到的物体
+    );
+    // 3.创建渲染器-渲染到画布上
+    const renderer = new THREE.WebGLRenderer({
+      // 设置抗锯齿
+      antialias: true,
+    });
+    // 正确的光照材质，按照物理的光照的模型来渲染
+    renderer.physicallyCorrectLights = true;
+    renderer.setSize(domElem.clientWidth, domElem.clientHeight); //渲染的屏幕大小
+    domElem.appendChild(renderer.domElement); //将生成的画布(cavas)添加到元素上
+    // 5.设置相机位置 (x:水平方向，y：垂直方向，z：正对着我们)
+    camera.position.z = 20;
+    camera.lookAt(0, 0, 0); //相机看向哪里，默认是圆点(0,0,0)
+    // 6.渲染
+    // renderer.render(scene, camera)
+
+    // 7.添加世界坐标辅助器
+    const axesHelper = new THREE.AxesHelper(5);
+    camera.position.x = 2;
+    camera.position.y = 1;
+    scene.add(axesHelper);
+
+    // 8.添加控制器轨道
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; //设置带阻尼的惯性
+    controls.dampingFactor = 0.01; //设置阻尼系数
+
+    // demo5代码内容
+    // 1.实例化创建漫天星星-创建100个
+    let starsInstance = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(0.1, 32, 32),
+      new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 10,
+      }),
+      100,
+    );
+    // 2.星星随机到天上
+    let starsArr = [];
+    let endArr = [];
+    for (let i = 0; i < 100; i++) {
+      let x = Math.random() * 100 - 50;
+      let y = Math.random() * 100 - 50;
+      let z = Math.random() * 100 - 50;
+      starsArr.push(new THREE.Vector3(x, y, z)); //xyz范围在[-50,50]
+
+      // 3.矩阵：位移、缩放、旋转都可以用一个矩阵解决
+      let matrix = new THREE.Matrix4();
+      matrix.setPosition(x, y, z);
+      starsInstance.setMatrixAt(i, matrix);
+    }
+    scene.add(starsInstance);
+
+    // 4.创建爱心路径-贝塞尔曲线
+    let heartShape = new THREE.Shape();
+    heartShape.moveTo(25, 25);
+    heartShape.bezierCurveTo(25, 25, 20, 0, 0, 0);
+    heartShape.bezierCurveTo(-30, 0, -30, 35, -30, 35);
+    heartShape.bezierCurveTo(-30, 55, -10, 77, 25, 95);
+    heartShape.bezierCurveTo(60, 77, 80, 55, 80, 35);
+    heartShape.bezierCurveTo(80, 35, 80, 0, 50, 0);
+    heartShape.bezierCurveTo(35, 0, 25, 25, 25, 25);
+
+    let center = new THREE.Vector3(0, 0, 0);
+    //5.根据爱心路径获取点
+    for (let i = 0; i < 100; i++) {
+      // 获取一个点
+      let point = heartShape.getPoint(i / 100);
+      // 爱心太大
+      // endArr.push(new THREE.Vector3(point.x, point.y, point.z))
+      // 缩小爱心
+      endArr.push(
+        new THREE.Vector3(
+          0.1 * point.x + center.x,
+          0.1 * point.y + center.y,
+          center.z,
+        ),
+      );
+    }
+
+    // 6.创建爱心动画
+    function makeHeart() {
+      let params = {
+        time: 0,
+      };
+      gsap.to(params, {
+        time: 1,
+        duration: 1,
+        onUpdate: () => {
+          for (let i = 0; i < 100; i++) {
+            let x = starsArr[i].x + (endArr[i].x - starsArr[i].x) * params.time;
+            let y = starsArr[i].y + (endArr[i].y - starsArr[i].y) * params.time;
+            let z = starsArr[i].z + (endArr[i].z - starsArr[i].z) * params.time;
+            let matrix = new THREE.Matrix4();
+            matrix.setPosition(x, y, z);
+            starsInstance.setMatrixAt(i, matrix);
+          }
+          starsInstance.instanceMatrix.needsUpdate = true;
+        },
+      });
+    }
+    setTimeout(() => {
+      makeHeart();
+    }, 2000);
+    // demo5代码内容
+
+    // 动画渲染
+    function animate() {
+      controls.update();
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  };
+
+  const renderDemo6 = () => {
+    const domElem = demoRef6.current;
+    // 1.创建场景
+    const scene = new THREE.Scene();
+    // 2.创建相机
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      domElem.clientWidth / domElem.clientHeight,
+      0.1,
+      1000,
+    );
+    camera.position.set(1, 8, 10);
+    camera.lookAt(0, 0, 0); //相机看向哪里，默认是圆点(0,0,0)
+    // 3.创建渲染器
+    const renderder = new THREE.WebGLRenderer({
+      antialias: true,
+    });
+    renderder.setSize(domElem.offsetWidth, domElem.offsetHeight);
+
+    // 4.将渲染结果添加到dom上
+    domElem.appendChild(renderder.domElement);
+
+    // 初始化渲染器，渲染背景
+    renderder.setClearColor('#ccc');
+    scene.background = new THREE.Color('#ccc');
+    scene.environment = new THREE.Color('#ccc');
+
+    const controls = new OrbitControls(camera, renderder.domElement);
+    controls.enableDamping = true; //设置带阻尼的惯性
+    controls.dampingFactor = 0.01; //设置阻尼系数
+    const axesHelper = new THREE.AxesHelper(5);
+    scene.add(axesHelper);
+
+    // 5.添加网格地面
+    const gridHelper = new THREE.GridHelper(10, 10);
+    gridHelper.material.opacity = 0.2;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+
+    // const wheels = []
+    // let carBody
+    // // 创建材质
+    // const bodyMaterial = new THREE.MeshPhysicalMaterial({
+    //   color: 0xff0000,
+    //   // 设置金属度
+    //   metalness: 1,
+    //   // 粗糙度
+    //   roughness: 0.5,
+    //   // 清晰
+    //   clearcoat: 1,
+    //   // 设置清晰光滑比较透亮，设置粗糙为0
+    //   clearcoatRoughness: 0
+    // })
+
+    // // 6.加载宝马模型,因为是物理材质黑色的需要添加灯光
+    // Loader.load('./model/bmw.glb', (gltf) => {
+    //   const bmw = gltf.scene;
+    //   // 遍历模型子元素
+    //   bmw.traverse((child) => {
+    //     if (child.isMesh) {
+    //       // 如果是物体输入名称
+    //       console.log(child.name)
+    //     }
+    //     if (child.isMesh && child.name.includes('轮毂')) {
+    //       wheels.push(child)
+    //     }
+    //     // 判断是否是车身
+    //     if (child.isMesh && child.name.includes('Mesh002')) {
+    //       carBody = child
+    //       // 给车身
+    //       carBody.material = bodyMaterial
+    //     }
+    //     // .....
+    //     scene.add(bmw)
+    //   })
+    // })
+
+    // // 7.加载多个方向的灯光DirectionalLight或环境光或hdr
+
+    // // 8.调用切换
+    // const selectColor = (color)=>{
+    //   bodyMaterial.color.set(color)
+    //   wheelsMaterial.color.set(color)
+    //   //...
+    // }
+
+    const render = () => {
+      controls.update();
+      renderder.render(scene, camera);
+      requestAnimationFrame(render);
+    };
+    render();
+  };
+
+  const renderDemo7 = () => {
+    const domElem = demoRef7.current;
+    // 1.创建场景
+    const scene = new THREE.Scene();
+    // 2.创建相机
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      domElem.clientWidth / domElem.clientHeight,
+      0.1,
+      1000,
+    );
+    camera.position.set(1, 8, 10);
+    camera.lookAt(0, 0, 0); //相机看向哪里，默认是圆点(0,0,0)
+    // 3.创建渲染器
+    const renderder = new THREE.WebGLRenderer({
+      antialias: true,
+    });
+    renderder.setSize(domElem.offsetWidth, domElem.offsetHeight);
+
+    // 4.将渲染结果添加到dom上
+    domElem.appendChild(renderder.domElement);
+
+    // 初始化渲染器，渲染背景
+    // renderder.setClearColor('#ccc');
+    // scene.background = new THREE.Color('#ccc')
+    // scene.environment = new THREE.Color('#ccc')
+
+    const controls = new OrbitControls(camera, renderder.domElement);
+    controls.enableDamping = true; //设置带阻尼的惯性
+    controls.dampingFactor = 0.01; //设置阻尼系数
+    const axesHelper = new THREE.AxesHelper(5);
+    scene.add(axesHelper);
+
+    //demo15内容
+    //1.视频纹理
+    let video = document.createElement('video');
+    video.src = './assets/imgs/movie.mp4';
+    video.loop = true;
+    // 只有静音了才能自动播放
+    video.muted = true;
+    video.play();
+    const videoTexture = new THREE.VideoTexture(video);
+
+    // 2.创建平面拥有视频纹理
+    const videoPlane = new THREE.PlaneGeometry(16, 9); //比例根据视频比例来
+    const videoMaterial = new THREE.MeshBasicMaterial({
+      map: videoTexture,
+      transparent: true,
+      side: THREE.DoubleSide,
+    });
+    const videoMesh = new THREE.Mesh(videoPlane, videoMaterial);
+    videoMesh.position.set(0, 0.2, 0);
+    videoMesh.rotation.set(-Math.PI / 2, 0, 0);
+    scene.add(videoMesh);
+
+    //3. 添加光阵
+    const light1 = new THREE.DirectionalLight(0xffffff, 1);
+    light1.position.set(1, 1, 1);
+    scene.add(light1);
+    //demo15内容
+
+    const render = () => {
+      controls.update();
+      renderder.render(scene, camera);
+      requestAnimationFrame(render);
+    };
+    render();
+  };
+
   useEffect(() => {
     renderDemo1();
     renderDemo2();
     renderDemo3();
     renderDemo4();
+    renderDemo5();
+    renderDemo6();
+    renderDemo7();
   }, []);
 
   return (
@@ -549,6 +844,21 @@ export default function IndexPage() {
         <div className={styles.module}>
           <h4>demo12：切换位置和场景</h4>
           <div className={styles.demo} ref={demoRef4}></div>
+        </div>
+
+        <div className={styles.module}>
+          <h4>demo13：漫天星星生成爱心</h4>
+          <div className={styles.demo} ref={demoRef5}></div>
+        </div>
+
+        <div className={styles.module}>
+          <h4>demo14：宝马汽车展示</h4>
+          <div className={styles.demo} ref={demoRef6}></div>
+        </div>
+
+        <div className={styles.module}>
+          <h4>demo15：酷炫形球形机器人</h4>
+          <div className={styles.demo} ref={demoRef7}></div>
         </div>
       </div>
     </div>
