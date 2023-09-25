@@ -793,8 +793,11 @@ export default function IndexPage() {
       side: THREE.DoubleSide,
     });
     const videoMesh = new THREE.Mesh(videoPlane, videoMaterial);
+    // 设置视频面的位置
     videoMesh.position.set(0, 0.2, 0);
+    // 设置视频面的旋转角度
     videoMesh.rotation.set(-Math.PI / 2, 0, 0);
+    // 将视频面添加到场景中
     scene.add(videoMesh);
 
     //3. 添加光阵

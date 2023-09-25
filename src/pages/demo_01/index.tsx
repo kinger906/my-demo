@@ -8,9 +8,13 @@ export default function IndexPage() {
 
   const renderDemo1 = () => {
     lottie.loadAnimation({
+      // 加载动画的容器
       container: domRef.current,
+      // 动画渲染器
       renderer: 'svg',
+      // 动画循环
       loop: true,
+      // 动画路径
       path: 'https://labs.nearpod.com/bodymovin/demo/markus/halloween/markus.json',
     });
   };
